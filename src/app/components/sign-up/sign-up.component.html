@@ -1,0 +1,293 @@
+<!-- src/app/components/sign-up/sign-up.component.html -->
+<div class="signup-container">
+  <!-- LADO IZQUIERDO: Branding -->
+  <div class="signup-left">
+    <div class="brand-section">
+      <div class="logo-wrapper">
+        <div class="cow-icon">🐄</div>
+        <h1 class="brand-title">BoviPred</h1>
+      </div>
+      <h2 class="welcome-title">Únete a BoviPred</h2>
+      <p class="welcome-subtitle">
+        Comienza a optimizar la gestión de tu ganado con inteligencia artificial
+      </p>
+      
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <span class="benefit-icon">🎯</span>
+          <div>
+            <h3>Predicción Precisa</h3>
+            <p>Precisión en predicción de preñez</p>
+          </div>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">📊</span>
+          <div>
+            <h3>Análisis Detallado</h3>
+            <p>Reportes completos y visualizaciones</p>
+          </div>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">💰</span>
+          <div>
+            <h3>Ahorro de Costos</h3>
+            <p>Optimiza recursos y reduce pérdidas</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LADO DERECHO: Formulario -->
+  <div class="signup-right">
+    <div class="signup-card">
+      <div class="signup-header">
+        <h2>Crear Cuenta</h2>
+        <p>Completa el formulario para registrarte</p>
+      </div>
+
+      <!-- MENSAJE DE ERROR -->
+      <div class="alert alert-error" *ngIf="showError">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-content">
+          <span class="alert-message" [innerHTML]="errorMessage"></span>
+        </div>
+        <button class="alert-close" (click)="hideError()">×</button>
+      </div>
+
+      <!-- FORMULARIO -->
+      <form (ngSubmit)="onSubmit()" class="signup-form">
+        <!-- Nombre y Apellido en fila -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Nombre *</label>
+            <div class="input-wrapper" [class.error]="!validations.name.valid">
+              <span class="input-icon">👤</span>
+              <input
+                type="text"
+                id="name"
+                [(ngModel)]="formData.name"
+                name="name"
+                placeholder="Juan"
+                required
+                [disabled]="loading"
+                maxlength="50"
+              />
+            </div>
+            <span class="error-message" *ngIf="!validations.name.valid">
+              {{ validations.name.message }}
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="apellido">Apellido *</label>
+            <div class="input-wrapper" [class.error]="!validations.apellido.valid">
+              <span class="input-icon">👤</span>
+              <input
+                type="text"
+                id="apellido"
+                [(ngModel)]="formData.apellido"
+                name="apellido"
+                placeholder="Pérez"
+                required
+                [disabled]="loading"
+                maxlength="50"
+              />
+            </div>
+            <span class="error-message" *ngIf="!validations.apellido.valid">
+              {{ validations.apellido.message }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Correo Electrónico *</label>
+          <div class="input-wrapper" [class.error]="!validations.email.valid">
+            <span class="input-icon">📧</span>
+            <input
+              type="email"
+              id="email"
+              [(ngModel)]="formData.email"
+              name="email"
+              placeholder="correo@ejemplo.com"
+              required
+              autocomplete="email"
+              [disabled]="loading"
+              (blur)="onEmailBlur()"
+            />
+            <span class="validation-icon" *ngIf="formData.email && validations.email.valid">✓</span>
+          </div>
+          <span class="error-message" *ngIf="!validations.email.valid">
+            {{ validations.email.message }}
+          </span>
+        </div>
+
+        <!-- Teléfono y Rol en fila -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <div class="input-wrapper">
+              <span class="input-icon">📱</span>
+              <input
+                type="tel"
+                id="telefono"
+                [(ngModel)]="formData.telefono"
+                name="telefono"
+                placeholder="+504 9999-9999"
+                [disabled]="loading"
+                maxlength="20"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="rol">Rol</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👨‍⚕️</span>
+              <select
+                id="rol"
+                [(ngModel)]="formData.rol"
+                name="rol"
+                [disabled]="loading"
+              >
+                <option value="asistente">Asistente</option>
+                <option value="veterinario">Veterinario</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-group">
+          <label for="password">Contraseña *</label>
+          <div class="input-wrapper" [class.error]="!validations.password.valid">
+            <span class="input-icon">🔒</span>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              [(ngModel)]="formData.password"
+              name="password"
+              placeholder="Mínimo 8 caracteres"
+              required
+              autocomplete="new-password"
+              [disabled]="loading"
+              (blur)="onPasswordBlur()"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [disabled]="loading"
+              tabindex="-1"
+            >
+              <span *ngIf="!showPassword">🙉</span>
+              <span *ngIf="showPassword">🙈</span>
+            </button>
+          </div>
+          
+          <!-- Indicador de fuerza de contraseña -->
+          <div class="password-strength" *ngIf="formData.password">
+            <div class="strength-bar">
+              <div 
+                class="strength-fill" 
+                [class.weak]="getPasswordStrength() === 'weak'"
+                [class.medium]="getPasswordStrength() === 'medium'"
+                [class.strong]="getPasswordStrength() === 'strong'"
+              ></div>
+            </div>
+            <span class="strength-label">
+              {{ getPasswordStrength() === 'weak' ? 'Débil' : 
+                 getPasswordStrength() === 'medium' ? 'Media' : 'Fuerte' }}
+            </span>
+          </div>
+          
+          <span class="error-message" *ngIf="!validations.password.valid">
+            {{ validations.password.message }}
+          </span>
+        </div>
+
+        <!-- Confirmar Contraseña -->
+        <div class="form-group">
+          <label for="password_confirmation">Confirmar Contraseña *</label>
+          <div class="input-wrapper" [class.error]="!validations.confirmPassword.valid">
+            <span class="input-icon">🔒</span>
+            <input
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              id="password_confirmation"
+              [(ngModel)]="formData.password_confirmation"
+              name="password_confirmation"
+              placeholder="Repite la contraseña"
+              required
+              autocomplete="new-password"
+              [disabled]="loading"
+              (blur)="onConfirmPasswordBlur()"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="toggleConfirmPassword()"
+              [disabled]="loading"
+              tabindex="-1"
+            >
+              <span *ngIf="!showConfirmPassword">🙉</span>
+              <span *ngIf="showConfirmPassword">🙈</span>
+            </button>
+            <span class="validation-icon" 
+                  *ngIf="formData.password_confirmation && validations.confirmPassword.valid">
+              ✓
+            </span>
+          </div>
+          <span class="error-message" *ngIf="!validations.confirmPassword.valid">
+            {{ validations.confirmPassword.message }}
+          </span>
+        </div>
+
+        <!-- Términos y Condiciones -->
+        <div class="form-group">
+          <label class="checkbox-wrapper">
+            <input
+              type="checkbox"
+              [(ngModel)]="acceptTerms"
+              name="acceptTerms"
+              [disabled]="loading"
+            />
+            <span class="terms-text">
+              Acepto los 
+              <a href="#" target="_blank">términos y condiciones</a> y la 
+              <a href="#" target="_blank">política de privacidad</a>
+            </span>
+          </label>
+        </div>
+
+        <!-- Botón de Registro -->
+        <button 
+          type="submit" 
+          class="btn-signup"
+          [disabled]="loading || !acceptTerms"
+          [class.loading]="loading"
+        >
+          <span *ngIf="!loading">Crear Cuenta</span>
+          <span *ngIf="loading" class="loader-wrapper">
+            <span class="spinner"></span>
+            <span>Creando cuenta...</span>
+          </span>
+        </button>
+
+        <!-- Link de Login -->
+        <div class="login-link">
+          <p>
+            ¿Ya tienes una cuenta? 
+            <a routerLink="/login">Inicia sesión aquí</a>
+          </p>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="signup-footer">
+      <p>© 2025 BoviPred - Todos los derechos reservados</p>
+    </div>
+  </div>
+</div>

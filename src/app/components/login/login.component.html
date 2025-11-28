@@ -1,0 +1,148 @@
+<!-- src/app/components/login/login.component.html -->
+<div class="login-container">
+  <!-- LADO IZQUIERDO: Branding e Ilustración -->
+  <div class="login-left">
+    <div class="brand-section">
+      <div class="logo-wrapper">
+        <div class="cow-icon">🐮</div>
+        <h1 class="brand-title">BoviPred</h1>
+      </div>
+      <p class="brand-subtitle">Sistema de Gestión y Predicción Bovina</p>
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <span class="benefit-icon">🎯</span>
+          <div>
+            <h3>Predicción Precisa</h3>
+            <p>Precisión en predicción de preñez</p>
+          </div>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">📊</span>
+          <div>
+            <h3>Análisis Detallado</h3>
+            <p>Reportes completos y visualizaciones</p>
+          </div>
+        </div>
+        <div class="benefit-item">
+          <span class="benefit-icon">💰</span>
+          <div>
+            <h3>Ahorro de Costos</h3>
+            <p>Optimiza recursos y reduce pérdidas</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="illustration">
+      <div class="grass"></div>
+      <div class="cow-silhouette">🐄</div>
+      <div class="bull-silhouette">🐂</div>
+      <div class="buffalo-silhouette">🐃</div>
+      <div class="cow2-silhouette">🐄</div>
+    </div>
+  </div>
+
+  <!-- LADO DERECHO: Formulario de Login -->
+  <div class="login-right">
+    <div class="login-card">
+      <div class="login-header">
+        <h2>Bienvenido de nuevo</h2>
+        <p>Ingresa tus credenciales para continuar</p>
+      </div>
+
+      <!-- MENSAJE DE ERROR -->
+      <div class="alert alert-error" *ngIf="showError">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-message">{{ errorMessage }}</span>
+        <button class="alert-close" (click)="hideError()">×</button>
+      </div>
+
+      <!-- FORMULARIO -->
+      <form (ngSubmit)="onSubmit()" class="login-form">
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Correo Electrónico</label>
+          <div class="input-wrapper" [class.error]="showError && !email">
+            <span class="input-icon">📧</span>
+            <input
+              type="email"
+              id="email"
+              [(ngModel)]="email"
+              name="email"
+              placeholder="ejemplo@correo.com"
+              required
+              autocomplete="email"
+              [disabled]="loading"
+            />
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <div class="input-wrapper" [class.error]="showError && !password">
+            <span class="input-icon">🔒</span>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              [(ngModel)]="password"
+              name="password"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+              [disabled]="loading"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [disabled]="loading"
+              tabindex="-1"
+            >
+              <span *ngIf="!showPassword">🙉</span>
+              <span *ngIf="showPassword">🙈</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón de Login -->
+        <button 
+          type="submit" 
+          class="btn-login"
+          [disabled]="loading"
+          [class.loading]="loading"
+        >
+          <span *ngIf="!loading">Iniciar Sesión</span>
+          <span *ngIf="loading" class="loader-wrapper">
+            <span class="spinner"></span>
+            <span>Iniciando sesión...</span>
+          </span>
+        </button>
+
+        <!-- Link de Registro -->
+        <div class="signup-link">
+          <p>
+            ¿No tienes una cuenta? 
+            <a routerLink="/sign-up">Regístrate aquí</a>
+          </p>
+        </div>
+
+        <!-- Botón de Demo (solo para desarrollo) -->
+        <div class="demo-section" *ngIf="!loading">
+          <button 
+            type="button" 
+            class="btn-demo"
+            (click)="fillDemoCredentials()"
+          >
+            🧪 Usar credenciales de prueba
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p>© 2025 BoviPred - Todos los derechos reservados</p>
+    </div>
+  </div>
+</div>

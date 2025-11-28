@@ -1,0 +1,416 @@
+<div class="dashboard-wrapper">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🐄</span>
+        <h2>BoviPred</h2>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="active">
+          <a [routerLink]="['/dashboard']">
+            <span class="icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/animals']">
+            <span class="icon">🐮</span>
+            <span>Animales</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/iatf']">
+            <span class="icon">💉</span>
+            <span>IATF</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/prediction']">
+            <span class="icon">🔮</span>
+            <span>Predicciones</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/reports']">
+            <span class="icon">📈</span>
+            <span>Reportes</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" (click)="logout(); $event.preventDefault()">
+        <span class="icon">➡️</span>
+        <span>Cerrar Sesión</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle">☰</button>
+        <h1 class="page-title">Dashboard</h1>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" *ngIf="isAdmin()" (click)="toggleUsersList()" title="Gestión de Usuarios">
+          <span class="icon">👥</span>
+        </button>
+        <div class="user-profile" (click)="toggleProfileSidebar()">
+          <span class="user-avatar">👤</span>
+          <span class="user-name">{{ user?.name }} {{ user?.apellido }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content">
+      
+      <!-- Loading Spinner -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner">🐄</div>
+        <p>Cargando datos...</p>
+      </div>
+
+      <!-- Content -->
+      <div *ngIf="!loading">
+        
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h2>¡Bienvenido{{ user?.name ? ', ' + user.name : '' }}! 👋</h2>
+            <p>Sistema Inteligente de Predicción de Preñez Bovina</p>
+            <small>📅 {{ currentDate | date:'EEEE, dd MMMM yyyy' }}</small>
+          </div>
+          <div class="welcome-image">
+            <span class="cow-emoji">🐄</span>
+          </div>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+          <div class="stat-card card-green">
+            <div class="stat-icon">🐮</div>
+            <div class="stat-info">
+              <h3>{{ stats.total_animales }}</h3>
+              <p>Total Animales</p>
+            </div>
+          </div>
+
+          <div class="stat-card card-blue">
+            <div class="stat-icon">💉</div>
+            <div class="stat-info">
+              <h3>{{ stats.total_iatf }}</h3>
+              <p>IATF Realizadas</p>
+            </div>
+          </div>
+
+          <div class="stat-card card-purple">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <h3>{{ stats.tasa_prenez_30_dias }}%</h3>
+              <p>Tasa de Preñez</p>
+            </div>
+          </div>
+
+          <div class="stat-card card-orange">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <h3>{{ stats.pendientes_confirmacion }}</h3>
+              <p>Pendientes</p>
+            </div>
+          </div>
+          
+          <div class="stat-card card-teal">
+            <div class="stat-icon">🔮</div>
+            <div class="stat-info">
+              <h3>{{ stats.total_predicciones }}</h3>
+              <p>Predicciones</p>
+            </div>
+          </div>
+        </div>        
+
+        <!-- Charts and Activity Section -->
+        <div class="charts-section">
+          
+          <!-- Charts Grid -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 class="chart-title">🐂 Top 5 Sementales</h3>
+              <div class="chart-placeholder">
+                <div *ngIf="topSementales && topSementales.length > 0" class="bar-chart-vertical">
+                  <div class="bar-item-vertical" *ngFor="let semental of topSementales.slice(0, 5)">
+                    <div class="bar-info">
+                      <span class="bar-label">{{ semental.nombre }}</span>
+                      <span class="bar-value-text">{{ semental.total_servicios }} servicios - {{ semental.tasa_historica_prenez || 0 }}%</span>
+                    </div>
+                    <div class="bar-container-horizontal">
+                      <div class="bar-fill-horizontal" 
+                           [style.width.%]="(semental.total_servicios / getMaxSementalValue()) * 100"
+                           [style.background]="'linear-gradient(90deg, #4a7c29, #5d9636)'"></div>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="!topSementales || topSementales.length === 0" class="empty-state">
+                  <p>📄 No hay datos de sementales disponibles</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <h3 class="chart-title">📈 Animales por Grupo</h3>
+              <div class="chart-placeholder">
+                <div *ngIf="distribucionGrupos && distribucionGrupos.length > 0" class="bar-chart-container">
+                  <div class="bar-chart-grid">
+                    <div class="bar-column" *ngFor="let grupo of distribucionGrupos.slice(0, 6)">
+                      <div class="bar-wrapper">
+                        <div class="bar-vertical" 
+                             [style.height.%]="getPercentage(grupo.total, getMaxGrupoValue())"
+                             [title]="grupo.grupo_lote + ': ' + grupo.total + ' animales'"></div>
+                      </div>
+                      <span class="bar-label-bottom">{{ grupo.grupo_lote }}</span>
+                      <span class="bar-value-bottom">{{ grupo.total }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="!distribucionGrupos || distribucionGrupos.length === 0" class="empty-state">
+                  <p>📄 No hay datos de grupos disponibles</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Sidebar de Perfil -->
+<div class="right-sidebar-overlay" *ngIf="showProfileSidebar" (click)="closeProfileSidebar()"></div>
+<aside class="right-sidebar profile-sidebar" [class.active]="showProfileSidebar">
+  <div class="sidebar-header">
+    <h3>👤 Mi Perfil</h3>
+    <button class="close-btn" (click)="closeProfileSidebar()">✕</button>
+  </div>
+  
+  <div class="sidebar-content">
+    <div class="profile-avatar-section">
+      <div class="profile-avatar-large">{{ user?.name?.charAt(0) }}{{ user?.apellido?.charAt(0) }}</div>
+      <h4>{{ user?.name }} {{ user?.apellido }}</h4>
+      <span class="profile-role">{{ user?.rol }}</span>
+    </div>
+
+    <div class="profile-info" *ngIf="!isEditingProfile">
+      <div class="info-item">
+        <label>📧 Email</label>
+        <p>{{ user?.email }}</p>
+      </div>
+      <div class="info-item">
+        <label>📱 Teléfono</label>
+        <p>{{ user?.telefono || 'No especificado' }}</p>
+      </div>
+      <div class="info-item">
+        <label>👔 Rol</label>
+        <p>{{ user?.rol }}</p>
+      </div>
+      <div class="info-item">
+        <label>✅ Estado</label>
+        <p>{{ user?.activo ? 'Activo' : 'Inactivo' }}</p>
+      </div>
+      <div class="info-item">
+        <label>📅 Miembro desde</label>
+        <p>{{ user?.created_at | date:'dd/MM/yyyy' }}</p>
+      </div>
+
+      <div class="profile-actions">
+        <button class="btn-edit" (click)="editProfile()">
+          <span>✏️</span>
+          <span>Editar Perfil</span>
+        </button>
+        <button class="btn-change-password" (click)="navigateTo('/change-password')">
+          <span>🔒</span>
+          <span>Cambiar Contraseña</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="profile-edit-form" *ngIf="isEditingProfile">
+      <div class="form-group">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="profileData.name" placeholder="Nombre">
+      </div>
+      <div class="form-group">
+        <label>Apellido</label>
+        <input type="text" [(ngModel)]="profileData.apellido" placeholder="Apellido">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" [(ngModel)]="profileData.email" placeholder="Email">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="tel" [(ngModel)]="profileData.telefono" placeholder="Teléfono">
+      </div>
+
+      <div class="edit-actions">
+        <button class="btn-cancel-edit" (click)="cancelEditProfile()">Cancelar</button>
+        <button class="btn-save-edit" (click)="saveProfile()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Sidebar de Lista de Usuarios -->
+<div class="right-sidebar-overlay" *ngIf="showUsersList" (click)="closeUsersList()"></div>
+<aside class="right-sidebar users-sidebar" [class.active]="showUsersList">
+  <div class="sidebar-header">
+    <h3>👥 Gestión de Usuarios</h3>
+    <button class="close-btn" (click)="closeUsersList()">✕</button>
+  </div>
+  
+  <div class="sidebar-content">
+    <!-- Loading -->
+    <div *ngIf="loadingUsers" class="users-loading">
+      <div class="spinner-users">⏳</div>
+      <p>Cargando usuarios...</p>
+    </div>
+
+    <!-- Lista de usuarios -->
+    <div *ngIf="!loadingUsers && usersList.length > 0" class="users-list">
+      <div class="user-card" *ngFor="let u of usersList">
+        <div class="user-card-header">
+          <div class="user-avatar-small">{{ u.name?.charAt(0) }}{{ u.apellido?.charAt(0) }}</div>
+          <div class="user-info">
+            <h4>{{ u.name }} {{ u.apellido }}</h4>
+            <p class="user-email">📧 {{ u.email }}</p>
+          </div>
+        </div>
+        
+        <div class="user-card-body">
+          <div class="user-detail">
+            <span class="detail-label">👔 Rol:</span>
+            <span class="detail-value role-badge" [class.admin]="u.rol === 'admin'" 
+                  [class.veterinario]="u.rol === 'veterinario'" 
+                  [class.asistente]="u.rol === 'asistente'">
+              {{ u.rol }}
+            </span>
+          </div>
+          
+          <div class="user-detail">
+            <span class="detail-label">✅ Estado:</span>
+            <span class="detail-value status-badge" [class.active]="u.activo" [class.inactive]="!u.activo">
+              {{ u.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="user-card-actions" *ngIf="user?.id !== u.id">
+          <button class="btn-toggle-status" (click)="showToggleUserModal(u)" 
+                  [class.activate]="!u.activo" 
+                  [class.deactivate]="u.activo">
+            <span *ngIf="u.activo">🚫</span>
+            <span *ngIf="!u.activo">✅</span>
+            <span>{{ u.activo ? 'Desactivar' : 'Activar' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sin usuarios -->
+    <div *ngIf="!loadingUsers && usersList.length === 0" class="no-users">
+      <span class="no-users-icon">📭</span>
+      <p>No hay usuarios registrados</p>
+    </div>
+  </div>
+</aside>
+
+<!-- Modal de Confirmación de Logout -->
+<div class="modal-overlay" *ngIf="showLogoutModal" (click)="cancelLogout()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-icon">⚠️</span>
+      <h3>Cerrar Sesión</h3>
+    </div>
+    <div class="modal-body">
+      <p>¿Estás seguro que deseas cerrar sesión?</p>
+      <p class="modal-subtitle">Perderás el acceso a tu cuenta hasta que vuelvas a iniciar sesión.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelLogout()" [disabled]="loggingOut">
+        <span>❌</span>
+        <span>Cancelar</span>
+      </button>
+      <button class="btn-confirm" (click)="confirmLogout()" [disabled]="loggingOut" [class.loading]="loggingOut">
+        <span *ngIf="!loggingOut">✔️</span>
+        <span *ngIf="!loggingOut">Cerrar Sesión</span>
+        <span *ngIf="loggingOut" class="logout-loader">
+          <span class="spinner"></span>
+          <span>Cerrando sesión...</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación para Cambiar Estado de Usuario -->
+<div class="modal-overlay" *ngIf="showToggleUserStatusModal" (click)="cancelToggleUserStatus()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header" [class.deactivate-header]="selectedUser?.activo" [class.activate-header]="!selectedUser?.activo">
+      <span class="modal-icon" *ngIf="selectedUser?.activo">🚫</span>
+      <span class="modal-icon" *ngIf="!selectedUser?.activo">✅</span>
+      <h3>{{ selectedUser?.activo ? 'Desactivar Usuario' : 'Activar Usuario' }}</h3>
+    </div>
+    <div class="modal-body">
+      <div class="user-modal-info">
+        <div class="user-modal-avatar">{{ selectedUser?.name?.charAt(0) }}{{ selectedUser?.apellido?.charAt(0) }}</div>
+        <h4>{{ selectedUser?.name }} {{ selectedUser?.apellido }}</h4>
+        <p class="user-modal-email">{{ selectedUser?.email }}</p>
+      </div>
+      <p class="modal-question" *ngIf="selectedUser?.activo">
+        ¿Estás seguro que deseas <strong>desactivar</strong> este usuario?
+      </p>
+      <p class="modal-question" *ngIf="!selectedUser?.activo">
+        ¿Estás seguro que deseas <strong>activar</strong> este usuario?
+      </p>
+      <p class="modal-subtitle" *ngIf="selectedUser?.activo">
+        El usuario no podrá acceder al sistema hasta que sea activado nuevamente.
+      </p>
+      <p class="modal-subtitle" *ngIf="!selectedUser?.activo">
+        El usuario podrá acceder al sistema nuevamente.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelToggleUserStatus()" [disabled]="togglingUserStatus">
+        <span>❌</span>
+        <span>Cancelar</span>
+      </button>
+      <button class="btn-confirm" 
+              [class.btn-deactivate]="selectedUser?.activo"
+              [class.btn-activate]="!selectedUser?.activo"
+              (click)="confirmToggleUserStatus()" 
+              [disabled]="togglingUserStatus" 
+              [class.loading]="togglingUserStatus">
+        <span *ngIf="!togglingUserStatus && selectedUser?.activo">🚫</span>
+        <span *ngIf="!togglingUserStatus && !selectedUser?.activo">✅</span>
+        <span *ngIf="!togglingUserStatus">{{ selectedUser?.activo ? 'Desactivar' : 'Activar' }}</span>
+        <span *ngIf="togglingUserStatus" class="logout-loader">
+          <span class="spinner"></span>
+          <span>Procesando...</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

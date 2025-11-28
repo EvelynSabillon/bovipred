@@ -1,0 +1,606 @@
+<div class="animals-container">
+  
+  <!-- Header -->
+  <header class="animals-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="navigateBack()">
+        <span>←</span>
+        <span>Volver</span>
+      </button>
+      <h1 class="page-title">🐄 Gestión de Animales</h1>
+    </div>
+    <div class="header-right">
+      <button class="btn-primary" *ngIf="canEdit() && activeTab === 'grupos'" (click)="openCreateGrupoModal()">
+        <span>➕</span>
+        <span>Nuevo Grupo</span>
+      </button>
+      <button class="btn-primary" *ngIf="canEdit() && activeTab === 'vacas'" (click)="openCreateAnimalModal()">
+        <span>➕</span>
+        <span>Nueva Vaca</span>
+      </button>
+      <button class="btn-primary" *ngIf="canEdit() && activeTab === 'sementales'" (click)="openCreateSementalModal()">
+        <span>➕</span>
+        <span>Nuevo Semental</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'grupos'" (click)="setActiveTab('grupos')">
+      <span class="tab-icon">📦</span>
+      <span>Grupos</span>
+      <span class="tab-badge">{{ grupos.length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'vacas'" (click)="setActiveTab('vacas')">
+      <span class="tab-icon">🐮</span>
+      <span>Vacas</span>
+      <span class="tab-badge">{{ animales.length }}</span>
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'sementales'" (click)="setActiveTab('sementales')">
+      <span class="tab-icon">🐂</span>
+      <span>Sementales</span>
+      <span class="tab-badge">{{ sementales.length }}</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content-wrapper">
+    
+    <!-- Grupos Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'grupos'">
+      <div class="content-header">
+        <h2>📦 Grupos de Ganado</h2>
+        <div class="search-container">
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Buscar grupos..." 
+            [(ngModel)]="searchGrupos"
+            (keyup.enter)="onSearchGrupos()"
+          />
+          <button class="btn-search" (click)="onSearchGrupos()">🔍</button>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" *ngIf="loadingGrupos">
+        <div class="spinner"></div>
+        <p>Cargando grupos...</p>
+      </div>
+
+      <div class="table-container" *ngIf="!loadingGrupos">
+        <table class="animals-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Cantidad</th>
+              <th>Estado</th>
+              <th>Fecha Creación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let grupo of grupos">
+              <td class="td-name">
+                <span class="grupo-icon">📦</span>
+                {{ grupo.nombre }}
+              </td>
+              <td>{{ grupo.descripcion || 'Sin descripción' }}</td>
+              <td class="td-count">
+                <span class="badge badge-count">{{ grupo.animals_count || 0 }}</span>
+                animales
+              </td>
+              <td>
+                <span class="status-badge" [class.active]="grupo.activo" [class.inactive]="!grupo.activo">
+                  {{ grupo.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td>{{ grupo.created_at | date:'dd/MM/yyyy' }}</td>
+              <td class="td-actions">
+                <button class="btn-icon" (click)="viewGrupoEstadisticas(grupo)" title="Ver estadísticas">📊</button>
+                <button class="btn-icon" *ngIf="canEdit()" (click)="openEditGrupoModal(grupo)" title="Editar">✏️</button>
+                <button class="btn-icon" *ngIf="isAdmin()" (click)="deleteGrupo(grupo)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Grupos -->
+      <div class="pagination" *ngIf="totalPagesGrupos > 1">
+        <button class="btn-page" (click)="prevPageGrupos()" [disabled]="currentPageGrupos === 1">
+          ← Anterior
+        </button>
+        <span class="page-info">Página {{ currentPageGrupos }} de {{ totalPagesGrupos }}</span>
+        <button class="btn-page" (click)="nextPageGrupos()" [disabled]="currentPageGrupos === totalPagesGrupos">
+          Siguiente →
+        </button>
+      </div>
+
+      <div class="empty-state" *ngIf="grupos.length === 0 && !loadingGrupos">
+        <span class="empty-icon">📭</span>
+        <h3>No hay grupos registrados</h3>
+        <p>Crea tu primer grupo para organizar tu ganado</p>
+        <button class="btn-create-first" *ngIf="canEdit()" (click)="openCreateGrupoModal()">
+          <span>➕</span>
+          <span>Crear Primer Grupo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vacas Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'vacas'">
+      <div class="content-header">
+        <h2>🐮 Registro de Vacas</h2>
+        <div class="search-container">
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Buscar por arete..." 
+            [(ngModel)]="searchAnimales"
+            (keyup.enter)="onSearchAnimales()"
+          />
+          <button class="btn-search" (click)="onSearchAnimales()">🔍</button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-container">
+        <div class="filter-group">
+          <label>Estado Reproductivo:</label>
+          <select [(ngModel)]="filterEstadoReproductivo" (change)="onFilterChange()">
+            <option value="">Todos</option>
+            <option value="activa">Activa</option>
+            <option value="prenada">Preñada</option>
+            <option value="seca">Seca</option>
+            <option value="descarte">Descarte</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Grupo:</label>
+          <select [(ngModel)]="filterGrupoId" (change)="onFilterChange()">
+            <option [value]="null">Todos</option>
+            <option *ngFor="let grupo of grupos" [value]="grupo.id">{{ grupo.nombre }}</option>
+          </select>
+        </div>
+        <button class="btn-clear-filters" (click)="clearFilters()">Limpiar Filtros</button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" *ngIf="loadingAnimales">
+        <div class="spinner"></div>
+        <p>Cargando animales...</p>
+      </div>
+
+      <div class="table-container" *ngIf="!loadingAnimales">
+        <table class="animals-table">
+          <thead>
+            <tr>
+              <th>Arete</th>
+              <th>Grupo</th>
+              <th>Edad (meses)</th>
+              <th>Peso (kg)</th>
+              <th>BCS</th>
+              <th>Nº Partos</th>
+              <th>Días Posparto</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let animal of animales">
+              <td><span class="badge badge-number">{{ animal.arete }}</span></td>
+              <td>{{ animal.grupo?.nombre || animal.grupo_lote || '-' }}</td>
+              <td>{{ animal.edad_meses || '-' }}</td>
+              <td>{{ animal.peso_kg ? (animal.peso_kg | number:'1.0-0') : '-' }}</td>
+              <td>{{ animal.condicion_corporal ? (animal.condicion_corporal | number:'1.1-1') : '-' }}</td>
+              <td>{{ animal.numero_partos || 0 }}</td>
+              <td>{{ animal.dias_posparto || '-' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getEstadoReproductivoBadgeClass(animal.estado_reproductivo || '')">
+                  {{ animal.estado_reproductivo || '-' }}
+                </span>
+              </td>
+              <td class="td-actions">
+                <button class="btn-icon" (click)="viewAnimalEstadisticas(animal)" title="Ver estadísticas">📊</button>
+                <button class="btn-icon" *ngIf="canEdit()" (click)="openEditAnimalModal(animal)" title="Editar">✏️</button>
+                <button class="btn-icon" *ngIf="isAdmin()" (click)="deleteAnimal(animal)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Animales -->
+      <div class="pagination" *ngIf="totalPagesAnimales > 1">
+        <button class="btn-page" (click)="prevPageAnimales()" [disabled]="currentPageAnimales === 1">
+          ← Anterior
+        </button>
+        <span class="page-info">Página {{ currentPageAnimales }} de {{ totalPagesAnimales }}</span>
+        <button class="btn-page" (click)="nextPageAnimales()" [disabled]="currentPageAnimales === totalPagesAnimales">
+          Siguiente →
+        </button>
+      </div>
+
+      <div class="empty-state" *ngIf="animales.length === 0 && !loadingAnimales">
+        <span class="empty-icon">🐮</span>
+        <h3>No hay vacas registradas</h3>
+        <p>Agrega tu primera vaca al sistema</p>
+        <button class="btn-create-first" *ngIf="canEdit()" (click)="openCreateAnimalModal()">
+          <span>➕</span>
+          <span>Crear Primera Vaca</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sementales Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'sementales'">
+      <div class="content-header">
+        <h2>🐂 Registro de Sementales</h2>
+        <div class="search-container">
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Buscar sementales..." 
+            [(ngModel)]="searchSementales"
+            (keyup.enter)="onSearchSementales()"
+          />
+          <button class="btn-search" (click)="onSearchSementales()">🔍</button>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" *ngIf="loadingSementales">
+        <div class="spinner"></div>
+        <p>Cargando sementales...</p>
+      </div>
+
+      <div class="table-container" *ngIf="!loadingSementales">
+        <table class="animals-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Raza</th>
+              <th>Código Pajilla</th>
+              <th>Calidad Seminal</th>
+              <th>Total Servicios</th>
+              <th>Tasa Preñez</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let semental of sementales">
+              <td class="td-name">{{ semental.nombre }}</td>
+              <td>{{ semental.raza || '-' }}</td>
+              <td>{{ semental.codigo_pajilla || '-' }}</td>
+              <td>{{ semental.calidad_seminal ? (semental.calidad_seminal + '%') : '-' }}</td>
+              <td class="td-services">{{ semental.total_servicios || 0 }}</td>
+              <td>
+                <span class="tasa-prenez-badge" 
+                      [class.high]="(semental.tasa_prenez || 0) >= 70"
+                      [class.medium]="(semental.tasa_prenez || 0) >= 50 && (semental.tasa_prenez || 0) < 70"
+                      [class.low]="(semental.tasa_prenez || 0) < 50">
+                  {{ semental.tasa_prenez ? (formatNumber(semental.tasa_prenez) + '%') : '-' }}
+                </span>
+              </td>
+              <td>
+                <span class="status-badge" [class.active]="semental.activo" [class.inactive]="!semental.activo">
+                  {{ semental.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="td-actions">
+                <button class="btn-icon" (click)="actualizarEstadisticasSemental(semental)" title="Actualizar estadísticas">🔄</button>
+                <button class="btn-icon" *ngIf="canEdit()" (click)="openEditSementalModal(semental)" title="Editar">✏️</button>
+                <button class="btn-icon" *ngIf="isAdmin()" (click)="deleteSemental(semental)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Sementales -->
+      <div class="pagination" *ngIf="totalPagesSementales > 1">
+        <button class="btn-page" (click)="prevPageSementales()" [disabled]="currentPageSementales === 1">
+          ← Anterior
+        </button>
+        <span class="page-info">Página {{ currentPageSementales }} de {{ totalPagesSementales }}</span>
+        <button class="btn-page" (click)="nextPageSementales()" [disabled]="currentPageSementales === totalPagesSementales">
+          Siguiente →
+        </button>
+      </div>
+
+      <div class="empty-state" *ngIf="sementales.length === 0 && !loadingSementales">
+        <span class="empty-icon">🐂</span>
+        <h3>No hay sementales registrados</h3>
+        <p>Agrega tu primer semental al sistema</p>
+        <button class="btn-create-first" *ngIf="canEdit()" (click)="openCreateSementalModal()">
+          <span>➕</span>
+          <span>Crear Primer Semental</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Modal Grupo -->
+<div class="modal-overlay" *ngIf="showGrupoModal" (click)="closeGrupoModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ selectedGrupo ? 'Editar Grupo' : 'Nuevo Grupo' }}</h2>
+      <button class="btn-close" (click)="closeGrupoModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre del Grupo *</label>
+        <input type="text" [(ngModel)]="grupoForm.nombre" placeholder="Ej: Grupo A" />
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="grupoForm.descripcion" placeholder="Descripción del grupo" rows="3"></textarea>
+      </div>
+      <div class="form-group-checkbox">
+        <input type="checkbox" id="grupo-activo" [(ngModel)]="grupoForm.activo" />
+        <label for="grupo-activo">Activo</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeGrupoModal()">Cancelar</button>
+      <button class="btn-primary" (click)="saveGrupo()">{{ selectedGrupo ? 'Actualizar' : 'Crear' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Animal -->
+<div class="modal-overlay" *ngIf="showAnimalModal" (click)="closeAnimalModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ selectedAnimal ? 'Editar Animal' : 'Nuevo Animal' }}</h2>
+      <button class="btn-close" (click)="closeAnimalModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Número de Arete *</label>
+          <input type="text" [(ngModel)]="animalForm.arete" placeholder="Ej: V-001" />
+        </div>
+        <div class="form-group">
+          <label>Grupo</label>
+          <select [(ngModel)]="animalForm.grupo_id">
+            <option [value]="null">Sin grupo</option>
+            <option *ngFor="let grupo of grupos" [value]="grupo.id">{{ grupo.nombre }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Edad (meses)</label>
+          <input type="number" [(ngModel)]="animalForm.edad_meses" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" [(ngModel)]="animalForm.peso_kg" min="0" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label>BCS (1-5)</label>
+          <input type="number" [(ngModel)]="animalForm.condicion_corporal" min="1" max="5" step="0.5" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Número de Partos</label>
+          <input type="number" [(ngModel)]="animalForm.numero_partos" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Días Posparto</label>
+          <input type="number" [(ngModel)]="animalForm.dias_posparto" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Estado Reproductivo</label>
+          <select [(ngModel)]="animalForm.estado_reproductivo">
+            <option value="activa">Activa</option>
+            <option value="prenada">Preñada</option>
+            <option value="seca">Seca</option>
+            <option value="descarte">Descarte</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Observaciones</label>
+        <textarea [(ngModel)]="animalForm.observaciones" placeholder="Notas adicionales" rows="3"></textarea>
+      </div>
+
+      <div class="form-group-checkbox">
+        <input type="checkbox" id="animal-activo" [(ngModel)]="animalForm.activo" />
+        <label for="animal-activo">Activo</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeAnimalModal()">Cancelar</button>
+      <button class="btn-primary" (click)="saveAnimal()">{{ selectedAnimal ? 'Actualizar' : 'Crear' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Semental -->
+<div class="modal-overlay" *ngIf="showSementalModal" (click)="closeSementalModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ selectedSemental ? 'Editar Semental' : 'Nuevo Semental' }}</h2>
+      <button class="btn-close" (click)="closeSementalModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" [(ngModel)]="sementalForm.nombre" placeholder="Ej: Titan" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Raza</label>
+          <input type="text" [(ngModel)]="sementalForm.raza" placeholder="Ej: Holstein" />
+        </div>
+        <div class="form-group">
+          <label>Código Pajilla</label>
+          <input type="text" [(ngModel)]="sementalForm.codigo_pajilla" placeholder="Ej: HOL-2024-001" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Calidad Seminal (%)</label>
+          <input type="number" [(ngModel)]="sementalForm.calidad_seminal" min="0" max="100" step="0.1" />
+        </div>
+        <div class="form-group">
+          <label>Morfología Espermática (%)</label>
+          <input type="number" [(ngModel)]="sementalForm.morfologia_espermatica" min="0" max="100" step="0.1" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Proveedor</label>
+        <input type="text" [(ngModel)]="sementalForm.proveedor" placeholder="Nombre del proveedor" />
+      </div>
+      <div class="form-group-checkbox">
+        <input type="checkbox" id="semental-activo" [(ngModel)]="sementalForm.activo" />
+        <label for="semental-activo">Activo</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeSementalModal()">Cancelar</button>
+      <button class="btn-primary" (click)="saveSemental()">{{ selectedSemental ? 'Actualizar' : 'Crear' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Estadísticas -->
+<div class="modal-overlay" *ngIf="showEstadisticasModal" (click)="closeEstadisticasModal()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📊 Estadísticas</h2>
+      <button class="btn-close" (click)="closeEstadisticasModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="estadisticasData">
+      <!-- Grupo Estadísticas -->
+      <div *ngIf="estadisticasData.grupo">
+        <h3>{{ estadisticasData.grupo.nombre }}</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Animales</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.total_animales }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Animales Activos</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.animales_activos }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total IATF</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.total_iatf }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Preñeces Confirmadas</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.preneces_confirmadas }}</span>
+          </div>
+          <div class="stat-card stat-highlight">
+            <span class="stat-label">Tasa de Preñez</span>
+            <span class="stat-value">{{ formatNumber(estadisticasData.estadisticas.tasa_prenez) }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animal Estadísticas -->
+      <div *ngIf="estadisticasData.animal">
+        <h3>Animal: {{ estadisticasData.animal.arete }}</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total IATF</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.total_iatf }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Preñeces Confirmadas</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.preneces_confirmadas }}</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Muertes Embrionarias</span>
+            <span class="stat-value">{{ estadisticasData.estadisticas.muertes_embrionarias }}</span>
+          </div>
+          <div class="stat-card stat-highlight">
+            <span class="stat-label">Tasa de Preñez</span>
+            <span class="stat-value">{{ formatNumber(estadisticasData.estadisticas.tasa_prenez) }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeEstadisticasModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+<!-- Modal de Confirmacion de Eliminacion -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmModal" (click)="cancelDelete()">
+  <div class="modal-content modal-confirm" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-delete">
+      <span class="modal-icon"></span>
+      <h3>{{ deleteModalTitle }}</h3>
+    </div>
+    <div class="modal-body">
+      <p class="modal-message">{{ deleteModalMessage }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelDelete()" [disabled]="deletingItem">
+        <span></span>
+        <span>Cancelar</span>
+      </button>
+      <button class="btn-confirm btn-delete-confirm" (click)="confirmDelete()" [disabled]="deletingItem" [class.loading]="deletingItem">
+        <span *ngIf="!deletingItem"></span>
+        <span *ngIf="!deletingItem">Eliminar</span>
+        <span *ngIf="deletingItem" class="delete-loader">
+          <span class="spinner-small"></span>
+          <span>Eliminando...</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de exito -->
+<div class="modal-overlay modal-overlay-success" *ngIf="showSuccessModal" (click)="closeSuccessModal()">
+  <div class="modal-content modal-success" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-success">
+      <span class="modal-icon modal-icon-success"></span>
+      <h3>Operación Exitosa</h3>
+    </div>
+    <div class="modal-body">
+      <p class="success-message">{{ successMessage }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-success" (click)="closeSuccessModal()">
+        <span></span>
+        <span>Aceptar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Error -->
+<div class="modal-overlay modal-overlay-error" *ngIf="showErrorModal" (click)="closeErrorModal()">
+  <div class="modal-content modal-error" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-error">
+      <span class="modal-icon modal-icon-error"></span>
+      <h3>Error</h3>
+    </div>
+    <div class="modal-body">
+      <p class="error-message">{{ errorMessage }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-error" (click)="closeErrorModal()">
+        <span></span>
+        <span>Aceptar</span>
+      </button>
+    </div>
+  </div>
+</div>

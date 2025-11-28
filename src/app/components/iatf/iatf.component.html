@@ -1,0 +1,1358 @@
+<div class="iatf-container">
+  <!-- Header -->
+  <div class="header">
+    <button class="btn-back" (click)="navigateBack()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Volver
+    </button>
+    <h1>🐄 Registros IATF - BOVIPRED</h1>
+    <button class="btn-create" *ngIf="canEdit()" (click)="openCreateModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Nuevo Registro
+    </button>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Animal</label>
+        <select [(ngModel)]="filterAnimalId" (change)="onFilterChange()" class="filter-select">
+          <option [ngValue]="null">Todos</option>
+          <option *ngFor="let animal of animales" [ngValue]="animal.id">
+            {{ animal.arete }} - {{ animal.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Semental</label>
+        <select [(ngModel)]="filterSementalId" (change)="onFilterChange()" class="filter-select">
+          <option [ngValue]="null">Todos</option>
+          <option *ngFor="let semental of sementales" [ngValue]="semental.id">
+            {{ semental.nombre }} ({{ semental.raza }})
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Resultado</label>
+        <select [(ngModel)]="filterResultado" (change)="onFilterChange()" class="filter-select">
+          <option value="">Todos</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="no_prenada">No Preñada</option>
+          <option value="muerte_embrionaria">Muerte Embrionaria</option>
+          <option value="pendiente">Pendiente</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Fecha Desde</label>
+        <input 
+          type="date" 
+          [(ngModel)]="filterFechaInicio" 
+          (change)="onFilterChange()"
+          class="filter-input">
+      </div>
+
+      <div class="filter-group">
+        <label>Fecha Hasta</label>
+        <input 
+          type="date" 
+          [(ngModel)]="filterFechaFin" 
+          (change)="onFilterChange()"
+          class="filter-input">
+      </div>
+
+      <div class="filter-group">
+        <button class="btn-clear-filters" (click)="clearFilters()">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loadingIATF" class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando registros IATF...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loadingIATF && iatfList.length === 0" class="empty-state">
+    <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M9 12h6M9 16h6M9 8h6M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+    </svg>
+    <h3>No hay registros de IATF</h3>
+    <p>Comienza registrando tu primer procedimiento de Inseminación Artificial a Tiempo Fijo</p>
+    <button class="btn-create-first" *ngIf="canEdit()" (click)="openCreateModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Crear Primer Registro IATF
+    </button>
+  </div>
+
+  <!-- IATF Table -->
+  <div *ngIf="!loadingIATF && iatfList.length > 0" class="table-container">
+    <table class="iatf-table">
+      <thead>
+        <tr>
+          <th>Arete</th>
+          <th>Animal</th>
+          <th>Semental</th>
+          <th>Fecha IATF</th>
+          <th>Tono Uterino</th>
+          <th>Tratamiento</th>
+          <th>Resultado</th>
+          <th>Fecha Confirmación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let iatf of iatfList">
+          <td>
+            <div class="animal-info">
+              <svg class="animal-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M12 14c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/>
+              </svg>
+              {{ iatf.animal?.arete || 'N/A' }}
+            </div>
+          </td>
+          <td>{{ iatf.animal?.nombre || '-' }}</td>
+          <td>{{ iatf.semental?.nombre || 'Sin asignar' }}</td>
+          <td>{{ formatDate(iatf.fecha_iatf) }}</td>
+          <td>
+            <span *ngIf="iatf.tono_uterino !== null" class="tono-badge" [class.tono-optimo]="iatf.tono_uterino >= 60">
+              {{ iatf.tono_uterino }}%
+            </span>
+            <span *ngIf="iatf.tono_uterino === null">-</span>
+          </td>
+          <td>
+            <span *ngIf="iatf.tratamiento_previo" class="tratamiento-badge">
+              {{ iatf.tratamiento_previo }}
+            </span>
+            <span *ngIf="!iatf.tratamiento_previo">-</span>
+          </td>
+          <td>
+            <span [class]="'badge ' + getResultadoBadgeClass(iatf.resultado_iatf)">
+              {{ getResultadoLabel(iatf.resultado_iatf) }}
+            </span>
+          </td>
+          <td>{{ formatDate(iatf.fecha_confirmacion) }}</td>
+          <td>
+            <div class="actions">
+              <button 
+                class="btn-action btn-view" 
+                (click)="viewDetails(iatf)"
+                title="Ver detalles">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-action btn-resultado" 
+                *ngIf="canEdit() && iatf.resultado_iatf === 'pendiente'"
+                (click)="openResultadoModal(iatf)"
+                title="Confirmar resultado">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-action btn-edit" 
+                *ngIf="canEdit()"
+                (click)="openEditModal(iatf)"
+                title="Editar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-action btn-delete" 
+                *ngIf="canEdit()"
+                (click)="deleteIATF(iatf)"
+                title="Eliminar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button 
+        class="btn-page" 
+        [disabled]="currentPage === 1"
+        (click)="prevPage()">
+        Anterior
+      </button>
+      <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+      <button 
+        class="btn-page" 
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()">
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Create/Edit IATF Modal - Multi-Step Form -->
+<div class="modal-overlay" *ngIf="showIATFModal" (click)="closeIATFModal()">
+  <div class="modal modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ selectedIATF ? 'Editar Registro IATF' : 'Nuevo Registro IATF' }}</h2>
+      <button class="btn-close" (click)="closeIATFModal()">×</button>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="stepper">
+      <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1" (click)="goToStep(1)">
+        <div class="step-number">1</div>
+        <div class="step-label">Datos Básicos</div>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2" (click)="goToStep(2)">
+        <div class="step-number">2</div>
+        <div class="step-label">Variables Reproductivas</div>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3" (click)="goToStep(3)">
+        <div class="step-number">3</div>
+        <div class="step-label">Protocolo IATF</div>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 3"></div>
+      <div class="step" [class.active]="currentStep >= 4" [class.completed]="currentStep > 4" (click)="goToStep(4)">
+        <div class="step-number">4</div>
+        <div class="step-label">Variables Ambientales</div>
+      </div>
+      <div class="step-line" [class.completed]="currentStep > 4"></div>
+      <div class="step" [class.active]="currentStep >= 5" (click)="goToStep(5)">
+        <div class="step-number">5</div>
+        <div class="step-label">Observaciones</div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- STEP 1: Datos Básicos -->
+      <div *ngIf="currentStep === 1" class="form-step">
+        <h3 class="step-title">📋 Datos Básicos del Procedimiento</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Animal * <span class="required"></span></label>
+            <select [(ngModel)]="iatfForm.animal_id" name="animal_id" class="form-control" required>
+              <option [ngValue]="0" disabled>Seleccionar animal</option>
+              <option *ngFor="let animal of animales" [ngValue]="animal.id">
+                {{ animal.arete }} - {{ animal.nombre }} (BCS: {{ animal.bcs || 'N/A' }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Semental</label>
+            <select [(ngModel)]="iatfForm.semental_id" name="semental_id" class="form-control">
+              <option [ngValue]="null">Sin asignar</option>
+              <option *ngFor="let semental of sementales" [ngValue]="semental.id">
+                {{ semental.nombre }} ({{ semental.raza }}) - Tasa: {{ semental.tasa_prenez || 'N/A' }}%
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de IATF * <span class="required"></span></label>
+            <input 
+              type="date" 
+              [(ngModel)]="iatfForm.fecha_iatf" 
+              name="fecha_iatf"
+              class="form-control" 
+              required>
+          </div>
+
+          <div class="form-group">
+            <label>Hora de IATF</label>
+            <input 
+              type="time" 
+              [(ngModel)]="iatfForm.hora_iatf" 
+              name="hora_iatf"
+              class="form-control"
+              placeholder="Ej: 08:00">
+            <small class="form-hint">Óptimo: 6am-10am</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha Protocolo Día 0</label>
+            <input 
+              type="date" 
+              [(ngModel)]="iatfForm.fecha_protocolo_dia_0" 
+              name="fecha_protocolo_dia_0"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Fecha Protocolo Día 8</label>
+            <input 
+              type="date" 
+              [(ngModel)]="iatfForm.fecha_protocolo_dia_8" 
+              name="fecha_protocolo_dia_8"
+              class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha Protocolo Día 9</label>
+            <input 
+              type="date" 
+              [(ngModel)]="iatfForm.fecha_protocolo_dia_9" 
+              name="fecha_protocolo_dia_9"
+              class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Fecha Protocolo Día 10</label>
+            <input 
+              type="date" 
+              [(ngModel)]="iatfForm.fecha_protocolo_dia_10" 
+              name="fecha_protocolo_dia_10"
+              class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Técnico Responsable</label>
+          <input 
+            type="text" 
+            [(ngModel)]="iatfForm.tecnico_responsable" 
+            name="tecnico_responsable"
+            class="form-control"
+            placeholder="Nombre del técnico que realizó el procedimiento">
+        </div>
+      </div>
+
+      <!-- STEP 2: Variables Reproductivas -->
+      <div *ngIf="currentStep === 2" class="form-step">
+        <h3 class="step-title">🔬 Variables Reproductivas</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Condición Ovario Derecho (OD)</label>
+            <select [(ngModel)]="iatfForm.condicion_ovarica_od" name="condicion_ovarica_od" class="form-control">
+              <option [ngValue]="null">No evaluado</option>
+              <option value="C">C - Ciclando</option>
+              <option value="CL">CL - Cuerpo Lúteo</option>
+              <option value="FD">FD - Folículo Dominante</option>
+              <option value="F">F - Folículo</option>
+              <option value="I">I - Inactivo</option>
+              <option value="A">A - Anestro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Condición Ovario Izquierdo (OI)</label>
+            <select [(ngModel)]="iatfForm.condicion_ovarica_oi" name="condicion_ovarica_oi" class="form-control">
+              <option [ngValue]="null">No evaluado</option>
+              <option value="C">C - Ciclando</option>
+              <option value="CL">CL - Cuerpo Lúteo</option>
+              <option value="FD">FD - Folículo Dominante</option>
+              <option value="F">F - Folículo</option>
+              <option value="I">I - Inactivo</option>
+              <option value="A">A - Anestro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tono Uterino (%)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.tono_uterino" 
+              name="tono_uterino"
+              class="form-control"
+              min="0"
+              max="100"
+              placeholder="0-100">
+            <small class="form-hint">Óptimo: >60%</small>
+          </div>
+
+          <div class="form-group">
+            <label>Tratamiento Previo</label>
+            <select [(ngModel)]="iatfForm.tratamiento_previo" name="tratamiento_previo" class="form-control">
+              <option [ngValue]="null">Ninguno</option>
+              <option value="T1">T1 - Tonificación Básica</option>
+              <option value="T2">T2 - Tonificación Avanzada + Buseralina</option>
+              <option value="RS">RS - Resincronización</option>
+              <option value="DESCARTE">DESCARTE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Días de Tonificación</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.dias_tonificacion" 
+              name="dias_tonificacion"
+              class="form-control"
+              min="0"
+              placeholder="Ej: 30-45 días">
+          </div>
+
+          <div class="form-group">
+            <label>Sal Mineral (gr/día)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.sal_mineral_gr" 
+              name="sal_mineral_gr"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Estándar: 110 gr/día">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="iatfForm.desparasitacion_previa" 
+                name="desparasitacion_previa">
+              <span class="checkbox-text">✓ Animal desparasitado previo a IATF</span>
+            </label>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="iatfForm.vitaminas_aplicadas" 
+                name="vitaminas_aplicadas">
+              <span class="checkbox-text">✓ Vitaminas aplicadas</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="iatfForm.gestacion_previa" 
+                name="gestacion_previa">
+              <span class="checkbox-text">✓ Tuvo gestación previa</span>
+            </label>
+          </div>
+
+          <div class="form-group" *ngIf="iatfForm.gestacion_previa">
+            <label>Días de Gestación Previa</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.dias_gestacion_previa" 
+              name="dias_gestacion_previa"
+              class="form-control"
+              min="0"
+              max="280"
+              placeholder="0-280 días">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Modivitasan (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.modivitasan_ml" 
+              name="modivitasan_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+          </div>
+
+          <div class="form-group">
+            <label>Fosfoton (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.fosfoton_ml" 
+              name="fosfoton_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+          </div>
+
+          <div class="form-group">
+            <label>Seve (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.seve_ml" 
+              name="seve_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Protocolo IATF -->
+      <div *ngIf="currentStep === 3" class="form-step">
+        <h3 class="step-title">💉 Protocolo IATF</h3>
+
+        <div class="form-row">
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="iatfForm.dispositivo_dib" 
+                name="dispositivo_dib">
+              <span class="checkbox-text">✓ Dispositivo DIB colocado</span>
+            </label>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="iatfForm.retirada_dib" 
+                name="retirada_dib">
+              <span class="checkbox-text">✓ Dispositivo DIB retirado</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Estradiol (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.estradiol_ml" 
+              name="estradiol_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+            <small class="form-hint">Día 0 del protocolo</small>
+          </div>
+
+          <div class="form-group">
+            <label>eCG - Gonadotropina (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.ecg_ml" 
+              name="ecg_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+            <small class="form-hint">Día 8 del protocolo</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>PF2-Alpha - Prostaglandina (ml)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.pf2_alpha_ml" 
+              name="pf2_alpha_ml"
+              class="form-control"
+              min="0"
+              step="0.1"
+              placeholder="Dosis aplicada">
+            <small class="form-hint">Día 8/9 del protocolo</small>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <div>
+            <strong>Protocolo Estándar IATF:</strong>
+            <ul>
+              <li>Día 0: Colocación DIB + Estradiol</li>
+              <li>Día 8: Retiro DIB + eCG + PF2α</li>
+              <li>Día 9: Aplicación de inductor de celo (opcional)</li>
+              <li>Día 10: Inseminación artificial (48-52h post retiro)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Variables Ambientales -->
+      <div *ngIf="currentStep === 4" class="form-step">
+        <h3 class="step-title">🌤️ Variables Ambientales y de Manejo</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Época del Año</label>
+            <select [(ngModel)]="iatfForm.epoca_anio" name="epoca_anio" class="form-control">
+              <option [ngValue]="null">No especificado</option>
+              <option value="verano">Verano (Dic-Mar)</option>
+              <option value="invierno">Invierno (Jun-Sep)</option>
+              <option value="lluvias">Lluvias (May-Nov)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Temperatura Ambiente (°C)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.temperatura_ambiente" 
+              name="temperatura_ambiente"
+              class="form-control"
+              step="0.1"
+              placeholder="Ej: 28.5">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Humedad Relativa (%)</label>
+            <input 
+              type="number" 
+              [(ngModel)]="iatfForm.humedad_relativa" 
+              name="humedad_relativa"
+              class="form-control"
+              min="0"
+              max="100"
+              placeholder="0-100">
+          </div>
+
+          <div class="form-group">
+            <label>Disponibilidad de Agua</label>
+            <select [(ngModel)]="iatfForm.disponibilidad_agua" name="disponibilidad_agua" class="form-control">
+              <option [ngValue]="null">No evaluado</option>
+              <option value="adecuada">Adecuada</option>
+              <option value="limitada">Limitada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nivel de Estrés de Manejo</label>
+            <select [(ngModel)]="iatfForm.estres_manejo" name="estres_manejo" class="form-control">
+              <option [ngValue]="null">No evaluado</option>
+              <option [ngValue]="1">1 - Muy Bajo</option>
+              <option [ngValue]="2">2 - Bajo</option>
+              <option [ngValue]="3">3 - Medio</option>
+              <option [ngValue]="4">4 - Alto</option>
+              <option [ngValue]="5">5 - Muy Alto</option>
+            </select>
+            <small class="form-hint">Evaluar comportamiento del animal durante el manejo</small>
+          </div>
+
+          <div class="form-group">
+            <label>Calidad de Pasturas</label>
+            <select [(ngModel)]="iatfForm.calidad_pasturas" name="calidad_pasturas" class="form-control">
+              <option [ngValue]="null">No evaluado</option>
+              <option [ngValue]="1">1 - Muy Pobre</option>
+              <option [ngValue]="2">2 - Pobre</option>
+              <option [ngValue]="3">3 - Regular</option>
+              <option [ngValue]="4">4 - Buena</option>
+              <option [ngValue]="5">5 - Excelente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="info-box info-warning">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div>
+            <strong>Importante:</strong> Las condiciones ambientales y de manejo pueden afectar significativamente 
+            el éxito de la IATF. El estrés térmico (>28°C) y el estrés de manejo reducen las tasas de concepción.
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5: Observaciones -->
+      <div *ngIf="currentStep === 5" class="form-step">
+        <h3 class="step-title">📝 Observaciones y Notas</h3>
+
+        <div class="form-group">
+          <label>Observaciones Generales</label>
+          <textarea 
+            [(ngModel)]="iatfForm.observaciones" 
+            name="observaciones"
+            class="form-control"
+            rows="6"
+            placeholder="Incluya cualquier observación relevante sobre el procedimiento, comportamiento del animal, condiciones especiales, etc."></textarea>
+        </div>
+
+        <div class="summary-box">
+          <h4>📊 Resumen del Registro</h4>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <strong>Animal:</strong>
+              <span>{{ getAnimalLabel(iatfForm.animal_id) }}</span>
+            </div>
+            <div class="summary-item">
+              <strong>Fecha IATF:</strong>
+              <span>{{ formatDate(iatfForm.fecha_iatf) }}</span>
+            </div>
+            <div class="summary-item">
+              <strong>Semental:</strong>
+              <span>{{ getSementalLabel(iatfForm.semental_id) }}</span>
+            </div>
+            <div class="summary-item">
+              <strong>Tono Uterino:</strong>
+              <span>{{ iatfForm.tono_uterino ? iatfForm.tono_uterino + '%' : 'No registrado' }}</span>
+            </div>
+            <div class="summary-item">
+              <strong>Tratamiento:</strong>
+              <span>{{ iatfForm.tratamiento_previo || 'Ninguno' }}</span>
+            </div>
+            <div class="summary-item">
+              <strong>Época:</strong>
+              <span>{{ iatfForm.epoca_anio || 'No especificado' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeIATFModal()" [disabled]="savingRecord">Cancelar</button>
+      <button 
+        class="btn-prev" 
+        *ngIf="currentStep > 1" 
+        (click)="prevStep()"
+        [disabled]="savingRecord">
+        ← Anterior
+      </button>
+      <button 
+        class="btn-next" 
+        *ngIf="currentStep < totalSteps" 
+        (click)="nextStep()">
+        Siguiente →
+      </button>
+      <button 
+        class="btn-save" 
+        *ngIf="currentStep === totalSteps" 
+        (click)="saveIATF()"
+        [disabled]="savingRecord">
+        <span *ngIf="!savingRecord">💾 Guardar Registro</span>
+        <span *ngIf="savingRecord" class="spinner-small"></span>
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Resultado Modal - Confirmar Resultado IATF -->
+<div class="modal-overlay" *ngIf="showResultadoModal" (click)="closeResultadoModal()">
+  <div class="modal modal-resultado" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-resultado">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+      </svg>
+      <h2>Confirmar Resultado de IATF</h2>
+    </div>
+    
+    <div class="modal-body">
+      <div class="animal-info-box">
+        <div class="info-row">
+          <strong>Animal:</strong>
+          <span>{{ selectedIATF?.animal?.arete }} - {{ selectedIATF?.animal?.nombre }}</span>
+        </div>
+        <div class="info-row">
+          <strong>Fecha IATF:</strong>
+          <span>{{ formatDate(selectedIATF?.fecha_iatf) }}</span>
+        </div>
+        <div class="info-row">
+          <strong>Semental:</strong>
+          <span>{{ selectedIATF?.semental?.nombre || 'No asignado' }}</span>
+        </div>
+      </div>
+
+      <form>
+        <div class="form-group">
+          <label>Resultado del Diagnóstico * <span class="required"></span></label>
+          <div class="radio-group">
+            <label class="radio-option radio-success">
+              <input 
+                type="radio" 
+                [(ngModel)]="resultadoForm.resultado_iatf" 
+                name="resultado_iatf" 
+                value="confirmada">
+              <div class="radio-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div>
+                  <strong>Gestación Confirmada</strong>
+                  <p>Animal con preñez confirmada mediante ecografía</p>
+                </div>
+              </div>
+            </label>
+
+            <label class="radio-option radio-error">
+              <input 
+                type="radio" 
+                [(ngModel)]="resultadoForm.resultado_iatf" 
+                name="resultado_iatf" 
+                value="no_prenada">
+              <div class="radio-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <div>
+                  <strong>No Preñada</strong>
+                  <p>Animal sin gestación confirmada</p>
+                </div>
+              </div>
+            </label>
+
+            <label class="radio-option radio-warning">
+              <input 
+                type="radio" 
+                [(ngModel)]="resultadoForm.resultado_iatf" 
+                name="resultado_iatf" 
+                value="muerte_embrionaria">
+              <div class="radio-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <strong>Muerte Embrionaria</strong>
+                  <p>Pérdida gestacional temprana detectada</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Confirmación * <span class="required"></span></label>
+            <input 
+              type="date" 
+              [(ngModel)]="resultadoForm.fecha_confirmacion" 
+              name="fecha_confirmacion"
+              class="form-control"
+              required>
+            <small class="form-hint">Típicamente 30-45 días post-IATF</small>
+          </div>
+
+          <div class="form-group" *ngIf="resultadoForm.resultado_iatf === 'confirmada'">
+            <label>Días de Gestación Confirmada</label>
+            <input 
+              type="number" 
+              [(ngModel)]="resultadoForm.dias_gestacion_confirmada" 
+              name="dias_gestacion_confirmada"
+              class="form-control"
+              min="0"
+              placeholder="Ej: 45">
+            <small class="form-hint">Días transcurridos desde la IATF</small>
+          </div>
+        </div>
+
+        <div class="info-box" *ngIf="resultadoForm.resultado_iatf === 'confirmada'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <div>
+            <strong>Próximos Pasos:</strong> Registrar fecha probable de parto (280 días desde IATF), 
+            programar seguimiento gestacional, y actualizar plan nutricional.
+          </div>
+        </div>
+
+        <div class="info-box info-warning" *ngIf="resultadoForm.resultado_iatf === 'no_prenada'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div>
+            <strong>Considerar:</strong> Evaluar causas potenciales (nutrición, estrés, timing), 
+            revisar protocolo, y programar nueva IATF o monta natural.
+          </div>
+        </div>
+      </form>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeResultadoModal()" [disabled]="savingRecord">Cancelar</button>
+      <button 
+        class="btn-save btn-save-resultado" 
+        (click)="saveResultado()"
+        [disabled]="savingRecord || resultadoForm.resultado_iatf === 'pendiente'">
+        <span *ngIf="!savingRecord">✓ Confirmar Resultado</span>
+        <span *ngIf="savingRecord" class="spinner-small"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirmModal">
+  <div class="modal modal-delete">
+    <div class="modal-header modal-header-delete">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h2>{{ deleteModalTitle }}</h2>
+    </div>
+    <div class="modal-body">
+      <p>{{ deleteModalMessage }}</p>
+      <div class="warning-box">
+        <strong>⚠️ Advertencia:</strong> Esta acción es permanente y no se puede deshacer. 
+        Se perderá toda la información asociada al registro.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelDelete()" [disabled]="deletingItem">Cancelar</button>
+      <button class="btn-delete-confirm" (click)="confirmDelete()" [disabled]="deletingItem">
+        <span *ngIf="!deletingItem">🗑️ Eliminar Definitivamente</span>
+        <span *ngIf="deletingItem" class="spinner-small"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay-success" *ngIf="showSuccessModal">
+  <div class="modal modal-success">
+    <div class="modal-header modal-header-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <div class="modal-body">
+      <p class="success-message">{{ successMessage }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal-overlay-error" *ngIf="showErrorModal">
+  <div class="modal modal-error">
+    <div class="modal-header modal-header-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <div class="modal-body">
+      <p class="error-message">{{ errorMessage }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-error" (click)="closeErrorModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+<!-- Details Modal - Vista Completa del Registro IATF -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal modal-details" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-details">
+      <div class="header-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <div>
+          <h2>Detalles del Registro IATF</h2>
+          <p class="subtitle">Información completa del procedimiento</p>
+        </div>
+      </div>
+      <button class="btn-close" (click)="closeDetailsModal()">×</button>
+    </div>
+    
+    <div class="modal-body modal-body-details" *ngIf="selectedIATF">
+      
+      <!-- Sección: Información General -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <h3>Información General</h3>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">ID Registro:</span>
+            <span class="value">#{{ selectedIATF.id }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Fecha de Registro:</span>
+            <span class="value">{{ formatDate(selectedIATF.created_at) }}</span>
+          </div>
+          <div class="detail-item highlight">
+            <span class="label">Animal:</span>
+            <span class="value">{{ selectedIATF.animal?.arete }} - {{ selectedIATF.animal?.nombre }}</span>
+          </div>
+          <div class="detail-item highlight">
+            <span class="label">Semental:</span>
+            <span class="value">{{ selectedIATF.semental?.nombre || 'No asignado' }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIATF.semental">
+            <span class="label">Raza Semental:</span>
+            <span class="value">{{ selectedIATF.semental?.raza }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIATF.semental">
+            <span class="label">Tasa Preñez Semental:</span>
+            <span class="value">{{ formatNumber(selectedIATF.semental?.tasa_prenez, '%') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Técnico Responsable:</span>
+            <span class="value">{{ selectedIATF.tecnico_responsable || 'No registrado' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Fechas del Protocolo -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <h3>Cronología del Protocolo IATF</h3>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item" *ngIf="selectedIATF.fecha_protocolo_dia_0">
+            <div class="timeline-marker">Día 0</div>
+            <div class="timeline-content">
+              <strong>Inicio del Protocolo</strong>
+              <p>{{ formatDate(selectedIATF.fecha_protocolo_dia_0) }}</p>
+              <small>Colocación de DIB + Estradiol</small>
+            </div>
+          </div>
+          <div class="timeline-item" *ngIf="selectedIATF.fecha_protocolo_dia_8">
+            <div class="timeline-marker">Día 8</div>
+            <div class="timeline-content">
+              <strong>Retiro de DIB</strong>
+              <p>{{ formatDate(selectedIATF.fecha_protocolo_dia_8) }}</p>
+              <small>Retiro DIB + eCG + PF2α</small>
+            </div>
+          </div>
+          <div class="timeline-item" *ngIf="selectedIATF.fecha_protocolo_dia_9">
+            <div class="timeline-marker">Día 9</div>
+            <div class="timeline-content">
+              <strong>Pre-Inseminación</strong>
+              <p>{{ formatDate(selectedIATF.fecha_protocolo_dia_9) }}</p>
+              <small>Inductor de celo (opcional)</small>
+            </div>
+          </div>
+          <div class="timeline-item highlight-timeline" *ngIf="selectedIATF.fecha_iatf">
+            <div class="timeline-marker primary">IA</div>
+            <div class="timeline-content">
+              <strong>Inseminación Artificial</strong>
+              <p>{{ formatDate(selectedIATF.fecha_iatf) }}</p>
+              <small *ngIf="selectedIATF.hora_iatf">Hora: {{ selectedIATF.hora_iatf }}</small>
+            </div>
+          </div>
+          <div class="timeline-item" *ngIf="selectedIATF.fecha_confirmacion">
+            <div class="timeline-marker success">✓</div>
+            <div class="timeline-content">
+              <strong>Confirmación de Resultado</strong>
+              <p>{{ formatDate(selectedIATF.fecha_confirmacion) }}</p>
+              <small>{{ getResultadoLabel(selectedIATF.resultado_iatf) }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Variables Reproductivas -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+          <h3>Variables Reproductivas</h3>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Condición Ovario Derecho:</span>
+            <span class="value">{{ getCondicionOvaricaLabel(selectedIATF.condicion_ovarica_od) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Condición Ovario Izquierdo:</span>
+            <span class="value">{{ getCondicionOvaricaLabel(selectedIATF.condicion_ovarica_oi) }}</span>
+          </div>
+          <div class="detail-item" [class.highlight-success]="selectedIATF.tono_uterino && selectedIATF.tono_uterino >= 60">
+            <span class="label">Tono Uterino:</span>
+            <span class="value">{{ formatNumber(selectedIATF.tono_uterino, '%') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Tratamiento Previo:</span>
+            <span class="value">{{ getTratamientoLabel(selectedIATF.tratamiento_previo) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Días de Tonificación:</span>
+            <span class="value">{{ formatNumber(selectedIATF.dias_tonificacion, ' días') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Desparasitación Previa:</span>
+            <span class="value">{{ formatBoolean(selectedIATF.desparasitacion_previa) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Vitaminas Aplicadas:</span>
+            <span class="value">{{ formatBoolean(selectedIATF.vitaminas_aplicadas) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Gestación Previa:</span>
+            <span class="value">{{ formatBoolean(selectedIATF.gestacion_previa) }}</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedIATF.gestacion_previa && selectedIATF.dias_gestacion_previa">
+            <span class="label">Días Gestación Previa:</span>
+            <span class="value">{{ formatNumber(selectedIATF.dias_gestacion_previa, ' días') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Manejo Nutricional -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+            <line x1="6" y1="1" x2="6" y2="4"/>
+            <line x1="10" y1="1" x2="10" y2="4"/>
+            <line x1="14" y1="1" x2="14" y2="4"/>
+          </svg>
+          <h3>Manejo Nutricional y Medicamentos</h3>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Sal Mineral:</span>
+            <span class="value">{{ formatNumber(selectedIATF.sal_mineral_gr, ' gr/día') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Modivitasan:</span>
+            <span class="value">{{ formatNumber(selectedIATF.modivitasan_ml, ' ml') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Fosfoton:</span>
+            <span class="value">{{ formatNumber(selectedIATF.fosfoton_ml, ' ml') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Seve:</span>
+            <span class="value">{{ formatNumber(selectedIATF.seve_ml, ' ml') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Protocolo Hormonal -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <h3>Protocolo Hormonal IATF</h3>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Dispositivo DIB Colocado:</span>
+            <span class="value">{{ formatBoolean(selectedIATF.dispositivo_dib) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Dispositivo DIB Retirado:</span>
+            <span class="value">{{ formatBoolean(selectedIATF.retirada_dib) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Estradiol (Día 0):</span>
+            <span class="value">{{ formatNumber(selectedIATF.estradiol_ml, ' ml') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">eCG - Gonadotropina:</span>
+            <span class="value">{{ formatNumber(selectedIATF.ecg_ml, ' ml') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">PF2α - Prostaglandina:</span>
+            <span class="value">{{ formatNumber(selectedIATF.pf2_alpha_ml, ' ml') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Variables Ambientales -->
+      <div class="details-section">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v1M12 21v1M4.22 4.22l.71.71M18.36 18.36l.71.71M1 12h1M21 12h1M4.22 19.78l.71-.71M18.36 5.64l.71-.71"/>
+            <circle cx="12" cy="12" r="5"/>
+          </svg>
+          <h3>Condiciones Ambientales y de Manejo</h3>
+        </div>
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="label">Época del Año:</span>
+            <span class="value">{{ getEpocaLabel(selectedIATF.epoca_anio) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Temperatura Ambiente:</span>
+            <span class="value">{{ formatNumber(selectedIATF.temperatura_ambiente, '°C') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Humedad Relativa:</span>
+            <span class="value">{{ formatNumber(selectedIATF.humedad_relativa, '%') }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Disponibilidad de Agua:</span>
+            <span class="value">{{ getDisponibilidadAguaLabel(selectedIATF.disponibilidad_agua) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Nivel de Estrés de Manejo:</span>
+            <span class="value">{{ selectedIATF.estres_manejo ? selectedIATF.estres_manejo + '/5' : '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Calidad de Pasturas:</span>
+            <span class="value">{{ selectedIATF.calidad_pasturas ? selectedIATF.calidad_pasturas + '/5' : '-' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Resultado -->
+      <div class="details-section" [class.section-success]="selectedIATF.resultado_iatf === 'confirmada'"
+           [class.section-error]="selectedIATF.resultado_iatf === 'no_prenada'"
+           [class.section-warning]="selectedIATF.resultado_iatf === 'muerte_embrionaria'">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <h3>Resultado del Procedimiento</h3>
+        </div>
+        <div class="result-container">
+          <div class="result-badge" [class]="'badge ' + getResultadoBadgeClass(selectedIATF.resultado_iatf)">
+            {{ getResultadoLabel(selectedIATF.resultado_iatf) }}
+          </div>
+          <div class="details-grid" *ngIf="selectedIATF.fecha_confirmacion">
+            <div class="detail-item">
+              <span class="label">Fecha de Confirmación:</span>
+              <span class="value">{{ formatDate(selectedIATF.fecha_confirmacion) }}</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedIATF.dias_gestacion_confirmada">
+              <span class="label">Días de Gestación:</span>
+              <span class="value">{{ selectedIATF.dias_gestacion_confirmada }} días</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedIATF.prenez_confirmada">
+              <span class="label">Preñez Confirmada:</span>
+              <span class="value">{{ formatBoolean(selectedIATF.prenez_confirmada) }}</span>
+            </div>
+          </div>
+          <div class="pending-message" *ngIf="selectedIATF.resultado_iatf === 'pendiente'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Pendiente de confirmación (típicamente 30-45 días post-IATF)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Observaciones -->
+      <div class="details-section" *ngIf="selectedIATF.observaciones">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <h3>Observaciones</h3>
+        </div>
+        <div class="observaciones-box">
+          {{ selectedIATF.observaciones }}
+        </div>
+      </div>
+
+      <!-- Sección: Predicción (si existe) -->
+      <div class="details-section section-prediction" *ngIf="selectedIATF.prediction">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          <h3>Predicción Machine Learning</h3>
+        </div>
+        <div class="prediction-content">
+          <div class="prediction-result">
+            <span class="prediction-label">Probabilidad de Éxito:</span>
+            <span class="prediction-value">{{ selectedIATF.prediction?.probabilidad_exito }}%</span>
+          </div>
+          <div class="prediction-bar">
+            <div class="prediction-fill" [style.width.%]="selectedIATF.prediction?.probabilidad_exito"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadata -->
+      <div class="metadata">
+        <div class="metadata-item">
+          <span class="meta-label">Creado:</span>
+          <span class="meta-value">{{ formatDate(selectedIATF.created_at) }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="selectedIATF.updated_at !== selectedIATF.created_at">
+          <span class="meta-label">Última modificación:</span>
+          <span class="meta-value">{{ formatDate(selectedIATF.updated_at) }}</span>
+        </div>
+      </div>
+
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeDetailsModal()">Cerrar</button>
+      <button class="btn-edit" *ngIf="canEdit()" (click)="closeDetailsModal(); openEditModal(selectedIATF!)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar Registro
+      </button>
+      <button 
+        class="btn-resultado" 
+        *ngIf="canEdit() && selectedIATF?.resultado_iatf === 'pendiente'"
+        (click)="closeDetailsModal(); openResultadoModal(selectedIATF!)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        Confirmar Resultado
+      </button>
+    </div>
+  </div>
+</div>
