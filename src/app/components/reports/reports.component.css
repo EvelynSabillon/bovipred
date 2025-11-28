@@ -561,7 +561,7 @@
   margin: 0 0 1rem 0;
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--primary-green-dark);
+  color: black;
 }
 
 .data-table table {
@@ -582,7 +582,7 @@
 
 .data-table th {
   background: var(--primary-green);
-  color: white;
+  color: black;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.85rem;
