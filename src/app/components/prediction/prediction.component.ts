@@ -101,6 +101,7 @@ export class PredictionComponent implements OnInit, OnDestroy {
     }
 
     if (this.filterValidadas !== '') {
+      // Convertir string a boolean para el filtro
       filters.validadas = this.filterValidadas === 'true';
     }
 

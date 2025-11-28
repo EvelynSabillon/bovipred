@@ -356,6 +356,24 @@ export class IatfComponent implements OnInit, OnDestroy {
   openEditModal(iatf: IATFRecord): void {
     this.selectedIATF = iatf;
     this.iatfForm = { ...iatf };
+    
+    // Convertir fechas ISO al formato YYYY-MM-DD para los inputs HTML
+    if (this.iatfForm.fecha_iatf) {
+      this.iatfForm.fecha_iatf = this.convertToDateInputFormat(this.iatfForm.fecha_iatf);
+    }
+    if (this.iatfForm.fecha_protocolo_dia_0) {
+      this.iatfForm.fecha_protocolo_dia_0 = this.convertToDateInputFormat(this.iatfForm.fecha_protocolo_dia_0);
+    }
+    if (this.iatfForm.fecha_protocolo_dia_8) {
+      this.iatfForm.fecha_protocolo_dia_8 = this.convertToDateInputFormat(this.iatfForm.fecha_protocolo_dia_8);
+    }
+    if (this.iatfForm.fecha_protocolo_dia_9) {
+      this.iatfForm.fecha_protocolo_dia_9 = this.convertToDateInputFormat(this.iatfForm.fecha_protocolo_dia_9);
+    }
+    if (this.iatfForm.fecha_protocolo_dia_10) {
+      this.iatfForm.fecha_protocolo_dia_10 = this.convertToDateInputFormat(this.iatfForm.fecha_protocolo_dia_10);
+    }
+    
     this.currentStep = 1;
     this.showIATFModal = true;
   }
@@ -559,11 +577,23 @@ export class IatfComponent implements OnInit, OnDestroy {
 
   formatDate(date: string | null | undefined): string {
     if (!date) return '-';
-    return new Date(date).toLocaleDateString('es-HN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+    
+    // Extraer la parte de la fecha del formato ISO para evitar problemas de zona horaria
+    const dateOnly = date.split('T')[0];
+    const [year, month, day] = dateOnly.split('-');
+    
+    // Formatear manualmente para evitar problemas de zona horaria
+    return `${day}/${month}/${year}`;
+  }
+
+  /**
+   * Convierte una fecha ISO (2025-11-28T00:00:00.000000Z) al formato YYYY-MM-DD
+   * requerido por los inputs HTML de tipo date
+   */
+  convertToDateInputFormat(date: string | null | undefined): string {
+    if (!date) return '';
+    // Extraer solo la parte de la fecha (YYYY-MM-DD) del formato ISO
+    return date.split('T')[0];
   }
 
   showSuccess(message: string): void {
@@ -584,7 +614,7 @@ export class IatfComponent implements OnInit, OnDestroy {
   getAnimalLabel(animalId: number | undefined): string {
     if (!animalId) return 'No seleccionado';
     const animal = this.animales.find(a => a.id === animalId);
-    return animal ? `${animal.arete} - ${animal.nombre}` : 'No encontrado';
+    return animal ? `${animal.arete}` : 'No encontrado';
   }
 
   getSementalLabel(sementalId: number | null | undefined): string {

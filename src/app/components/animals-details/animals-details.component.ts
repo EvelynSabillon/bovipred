@@ -626,8 +626,10 @@ export class AnimalsDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatNumber(value: number | undefined): string {
-    return value ? value.toFixed(2) : '0.00';
+  formatNumber(value: number | string | undefined | null): string {
+    if (value === null || value === undefined) return '0.00';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    return isNaN(numValue) ? '0.00' : numValue.toFixed(2);
   }
 
   showSuccess(message: string): void {

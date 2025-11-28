@@ -24,7 +24,7 @@
         <select [(ngModel)]="filterAnimalId" (change)="onFilterChange()" class="filter-select">
           <option [ngValue]="null">Todos</option>
           <option *ngFor="let animal of animales" [ngValue]="animal.id">
-            {{ animal.arete }} - {{ animal.nombre }}
+            {{ animal.arete }}
           </option>
         </select>
       </div>
@@ -104,8 +104,7 @@
     <table class="iatf-table">
       <thead>
         <tr>
-          <th>Arete</th>
-          <th>Animal</th>
+          <th>Arete Animal</th>
           <th>Semental</th>
           <th>Fecha IATF</th>
           <th>Tono Uterino</th>
@@ -126,7 +125,6 @@
               {{ iatf.animal?.arete || 'N/A' }}
             </div>
           </td>
-          <td>{{ iatf.animal?.nombre || '-' }}</td>
           <td>{{ iatf.semental?.nombre || 'Sin asignar' }}</td>
           <td>{{ formatDate(iatf.fecha_iatf) }}</td>
           <td>
@@ -258,7 +256,7 @@
             <select [(ngModel)]="iatfForm.animal_id" name="animal_id" class="form-control" required>
               <option [ngValue]="0" disabled>Seleccionar animal</option>
               <option *ngFor="let animal of animales" [ngValue]="animal.id">
-                {{ animal.arete }} - {{ animal.nombre }} (BCS: {{ animal.bcs || 'N/A' }})
+                {{ animal.arete }} - {{ animal.nombre }} (BCS: {{ animal.condicion_corporal || 'N/A' }})
               </option>
             </select>
           </div>
@@ -268,7 +266,7 @@
             <select [(ngModel)]="iatfForm.semental_id" name="semental_id" class="form-control">
               <option [ngValue]="null">Sin asignar</option>
               <option *ngFor="let semental of sementales" [ngValue]="semental.id">
-                {{ semental.nombre }} ({{ semental.raza }}) - Tasa: {{ semental.tasa_prenez || 'N/A' }}%
+                {{ semental.nombre }} ({{ semental.raza }}) - Tasa: {{ semental.tasa_historica_prenez || 'N/A' }}%
               </option>
             </select>
           </div>
@@ -335,16 +333,6 @@
               name="fecha_protocolo_dia_10"
               class="form-control">
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>Técnico Responsable</label>
-          <input 
-            type="text" 
-            [(ngModel)]="iatfForm.tecnico_responsable" 
-            name="tecnico_responsable"
-            class="form-control"
-            placeholder="Nombre del técnico que realizó el procedimiento">
         </div>
       </div>
 
@@ -780,7 +768,7 @@
       <div class="animal-info-box">
         <div class="info-row">
           <strong>Animal:</strong>
-          <span>{{ selectedIATF?.animal?.arete }} - {{ selectedIATF?.animal?.nombre }}</span>
+          <span>{{ selectedIATF?.animal?.arete }}</span>
         </div>
         <div class="info-row">
           <strong>Fecha IATF:</strong>
@@ -1021,7 +1009,7 @@
           </div>
           <div class="detail-item highlight">
             <span class="label">Animal:</span>
-            <span class="value">{{ selectedIATF.animal?.arete }} - {{ selectedIATF.animal?.nombre }}</span>
+            <span class="value">{{ selectedIATF.animal?.arete }}</span>
           </div>
           <div class="detail-item highlight">
             <span class="label">Semental:</span>
@@ -1033,11 +1021,7 @@
           </div>
           <div class="detail-item" *ngIf="selectedIATF.semental">
             <span class="label">Tasa Preñez Semental:</span>
-            <span class="value">{{ formatNumber(selectedIATF.semental?.tasa_prenez, '%') }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">Técnico Responsable:</span>
-            <span class="value">{{ selectedIATF.tecnico_responsable || 'No registrado' }}</span>
+            <span class="value">{{ formatNumber(selectedIATF.semental?.tasa_historica_prenez, '%') }}</span>
           </div>
         </div>
       </div>

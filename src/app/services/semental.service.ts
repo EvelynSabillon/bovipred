@@ -18,7 +18,7 @@ export interface Semental {
   // Estadísticas calculadas
   total_servicios?: number;
   total_preneces?: number;
-  tasa_prenez?: number;
+  tasa_historica_prenez?: number;
   created_at?: string;
   updated_at?: string;
 }

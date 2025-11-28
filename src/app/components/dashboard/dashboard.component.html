@@ -151,11 +151,11 @@
                   <div class="bar-item-vertical" *ngFor="let semental of topSementales.slice(0, 5)">
                     <div class="bar-info">
                       <span class="bar-label">{{ semental.nombre }}</span>
-                      <span class="bar-value-text">{{ semental.total_servicios }} servicios - {{ semental.tasa_historica_prenez || 0 }}%</span>
+                      <span class="bar-value-text">{{ semental.total_servicios }} servicios - {{ semental.tasa_historica_prenez  || 0 }}%</span>
                     </div>
                     <div class="bar-container-horizontal">
                       <div class="bar-fill-horizontal" 
-                           [style.width.%]="(semental.total_servicios / getMaxSementalValue()) * 100"
+                           [style.width.%]="(semental.tasa_historica_prenez || 0)"
                            [style.background]="'linear-gradient(90deg, #4a7c29, #5d9636)'"></div>
                     </div>
                   </div>

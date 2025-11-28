@@ -280,10 +280,10 @@
               <td class="td-services">{{ semental.total_servicios || 0 }}</td>
               <td>
                 <span class="tasa-prenez-badge" 
-                      [class.high]="(semental.tasa_prenez || 0) >= 70"
-                      [class.medium]="(semental.tasa_prenez || 0) >= 50 && (semental.tasa_prenez || 0) < 70"
-                      [class.low]="(semental.tasa_prenez || 0) < 50">
-                  {{ semental.tasa_prenez ? (formatNumber(semental.tasa_prenez) + '%') : '-' }}
+                      [class.high]="(semental.tasa_historica_prenez || 0) >= 70"
+                      [class.medium]="(semental.tasa_historica_prenez || 0) >= 50 && (semental.tasa_historica_prenez || 0) < 70"
+                      [class.low]="(semental.tasa_historica_prenez || 0) < 50">
+                  {{ semental.tasa_historica_prenez ? (formatNumber(semental.tasa_historica_prenez) + '%') : '-' }}
                 </span>
               </td>
               <td>
